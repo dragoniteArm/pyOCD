@@ -76,3 +76,5 @@ test_results.txt
 .pytest_cache
 .eggs/
 pyOCD/_version.py
+dump.bin
+test/dumpFlash.py
