@@ -76,3 +76,4 @@ test_results.txt
 .pytest_cache
 .eggs/
 pyOCD/_version.py
+.vscode
