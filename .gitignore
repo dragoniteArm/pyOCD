@@ -77,3 +77,5 @@ test_results.txt
 .eggs/
 pyOCD/_version.py
 .vscode
+dump.bin
+test/dumpFlash.py
