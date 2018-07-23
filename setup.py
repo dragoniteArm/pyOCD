@@ -18,7 +18,15 @@
 from setuptools import setup, find_packages
 import sys
 
-install_requires = ['intelhex', 'six', 'enum34', 'future', 'websocket-client', 'intervaltree', 'colorama']
+install_requires = [
+    'intelhex',
+    'six',
+    'enum34',
+    'future',
+    'websocket-client',
+    'intervaltree',
+    'colorama',
+    ]
 if sys.platform.startswith('linux'):
     install_requires.extend([
         'pyusb>=1.0.0b2',
@@ -38,11 +46,11 @@ setup(
         'local_scheme': 'dirty-tag',
         'write_to': 'pyOCD/_version.py'
     },
-    setup_requires=['setuptools_scm!=1.5.3,!=1.5.4'],
+    setup_requires=['setuptools_scm!=1.5.3,!=1.5.4', 'setuptools_scm_git_archive'],
     description="CMSIS-DAP debugger for Python",
     long_description=open('README.rst', 'Ur').read(),
-    author="Martin Kojtal, Russ Butler",
-    author_email="martin.kojtal@arm.com, russ.butler@arm.com",
+    author="Chris Reed, Martin Kojtal, Russ Butler",
+    author_email="chris.reed@arm.com, martin.kojtal@arm.com, russ.butler@arm.com",
     url='https://github.com/mbedmicro/pyOCD',
     license="Apache 2.0",
     install_requires=install_requires,
@@ -61,7 +69,6 @@ setup(
             'pyocd-tool = pyOCD.tools.pyocd:main',
         ],
     },
-    use_2to3=True,
     packages=find_packages(),
     include_package_data=True,  # include files from MANIFEST.in
 )

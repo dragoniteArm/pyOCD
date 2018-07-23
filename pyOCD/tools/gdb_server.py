@@ -24,15 +24,14 @@ import argparse
 import json
 import pkg_resources
 
-import pyOCD.board.mbed_board
-from pyOCD import __version__
-from pyOCD.debug.svd import isCmsisSvdAvailable
-from pyOCD.gdbserver import GDBServer
-from pyOCD.board import MbedBoard
-from pyOCD.utility.cmdline import (split_command_line, VECTOR_CATCH_CHAR_MAP, convert_vector_catch)
-from pyOCD.pyDAPAccess.dap_access_cmsis_dap import DAPAccessCMSISDAP
-import pyOCD.board.mbed_board
-from pyOCD.pyDAPAccess import DAPAccess
+from .. import __version__
+from .. import target
+from ..debug.svd import isCmsisSvdAvailable
+from ..gdbserver import GDBServer
+from ..board.mbed_board import MbedBoard
+from ..utility.cmdline import (split_command_line, VECTOR_CATCH_CHAR_MAP, convert_vector_catch)
+from ..pyDAPAccess.dap_access_cmsis_dap import DAPAccessCMSISDAP
+from ..pyDAPAccess import DAPAccess
 
 LEVELS = {
     'debug': logging.DEBUG,
@@ -42,8 +41,8 @@ LEVELS = {
     'critical': logging.CRITICAL
 }
 
-supported_targets = pyOCD.target.TARGET.keys()
-debug_levels = LEVELS.keys()
+supported_targets = list(target.TARGET.keys())
+debug_levels = list(LEVELS.keys())
 
 class InvalidArgumentError(RuntimeError):
     pass
@@ -191,18 +190,20 @@ class GDBServerTool(object):
     def list_boards(self):
         self.disable_logging()
 
-        try:
-            all_mbeds = MbedBoard.getAllConnectedBoards(close=True, blocking=False)
-            status = 0
-            error = ""
-        except Exception as e:
-            all_mbeds = []
-            status = 1
-            error = str(e)
-            if not self.args.output_json:
-                raise
+        if not self.args.output_json:
+            MbedBoard.listConnectedBoards()
+        else:
+            try:
+                all_mbeds = MbedBoard.getAllConnectedBoards(close=True, blocking=False)
+                status = 0
+                error = ""
+            except Exception as e:
+                all_mbeds = []
+                status = 1
+                error = str(e)
+                if not self.args.output_json:
+                    raise
 
-        if self.args.output_json:
             boards = []
             obj = {
                 'pyocd_version' : __version__,
@@ -237,14 +238,6 @@ class GDBServerTool(object):
                 boards.append(d)
 
             print(json.dumps(obj, indent=4))
-        else:
-            index = 0
-            if len(all_mbeds) > 0:
-                for mbed in all_mbeds:
-                    print("%d => %s boardId => %s" % (index, mbed.getInfo().encode('ascii', 'ignore'), mbed.unique_id))
-                    index += 1
-            else:
-                print("No available boards are connected")
 
     def list_targets(self):
         self.disable_logging()
@@ -259,7 +252,7 @@ class GDBServerTool(object):
                 }
 
             for name in supported_targets:
-                t = pyOCD.target.TARGET[name](None)
+                t = target.TARGET[name](None)
                 d = {
                     'name' : name,
                     'part_number' : t.part_number,
@@ -290,6 +283,7 @@ class GDBServerTool(object):
             self.process_commands(self.args.commands)
 
             gdb = None
+            gdbs = []
             if self.args.list_all == True:
                 self.list_boards()
             elif self.args.list_targets == True:
@@ -304,16 +298,21 @@ class GDBServerTool(object):
                         print("No board selected")
                         return 1
                     with board_selected as board:
-                        gdb = GDBServer(board, self.args.port_number, self.gdb_server_settings)
+                        baseTelnetPort = self.gdb_server_settings['telnet_port']
+                        for core_number, core in board.target.cores.items():
+                            self.gdb_server_settings['telnet_port'] = baseTelnetPort + core_number
+                            gdb = GDBServer(board, self.args.port_number + core_number, self.gdb_server_settings, core=core_number)
+                            gdbs.append(gdb)
+                        gdb = gdbs[0]
                         while gdb.isAlive():
                             gdb.join(timeout=0.5)
                 except KeyboardInterrupt:
-                    if gdb != None:
+                    for gdb in gdbs:
                         gdb.stop()
                 except Exception as e:
                     print("uncaught exception: %s" % e)
                     traceback.print_exc()
-                    if gdb != None:
+                    for gdb in gdbs:
                         gdb.stop()
                     return 1
 
