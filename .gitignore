@@ -76,8 +76,6 @@ test_results.txt
 .pytest_cache
 .eggs/
 pyOCD/_version.py
-<<<<<<< HEAD
-<<<<<<< HEAD
 .vscode
 dump.bin
 test/dumpFlash.py
