@@ -76,6 +76,9 @@ test_results.txt
 .pytest_cache
 .eggs/
 pyOCD/_version.py
+<<<<<<< HEAD
 .vscode
 dump.bin
 test/dumpFlash.py
+=======
+>>>>>>> parent of b2353e2... update gitignore
