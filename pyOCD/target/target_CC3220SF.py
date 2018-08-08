@@ -121,31 +121,24 @@ class CC3220SF(CoreSightTarget):
     def __init__(self, link):
         super(CC3220SF, self).__init__(link, self.memoryMap)
 
-    def init(self, bus_accessible=True):
-        # Start loading the SVD file
-        self.loadSVD()
+    def create_init_sequence(self):
+        seq = super(CC3220SF,self).create_init_sequence()
+        seq.replace_task('create_cores', self.create_CC3220SF_core)
+        return seq
 
-        # Create the DP and turn on debug.
-        self.dp.init()
-        self.dp.power_up_debug()
-
-        # Create an AHB-AP for the CPU.
-        ap0 = ap.AHB_AP(self.dp, 0)
-        ap0.init(bus_accessible)
-        self.add_ap(ap0)
-
-        # Create CortexM core.
-        core0 = CortexM_CC3220SF(self, self.dp, self.aps[0], self.memory_map)
-        core0.setHaltOnConnect(self.halt_on_connect)
-        if bus_accessible:
-            core0.init()
+    def create_CC3220SF_core(self):
+        core0 = CortexM_CC3220SF(self, self.aps[0], self.memory_map)
+        self.aps[0].core = core0
+        core0.init()
         self.add_core(core0)
+        
+
 
 
 class CortexM_CC3220SF(CortexM):
 
-    def __init__(self, rootTarget, dp, ap, memoryMap=None, core_num=0):
-        super(CortexM_CC3220SF, self).__init__(rootTarget, dp, ap, memoryMap, core_num)
+    def __init__(self, rootTarget, ap, memoryMap=None, core_num=0, cmpid=None, address=None):
+        super(CortexM_CC3220SF, self).__init__(rootTarget, ap, memoryMap, core_num, cmpid, address)
 
     def reset(self, software_reset=None):
         if software_reset:
